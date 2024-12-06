@@ -1,14 +1,42 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
+pub fn read_file(file_path: impl AsRef<std::path::Path>) -> std::io::Result<()> {
+    let mut reader = my_reader::BufReader::open(file_path)?;
+    let mut buffer = String::new();
+
+    while let Some(line) = reader.read_line(&mut buffer) {
+        println!("{}", line?.trim());
+    }
+
+    Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+mod my_reader {
+    use std::{
+        fs::File,
+        io::{self, prelude::*},
+    };
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
+    pub struct BufReader {
+        reader: io::BufReader<File>,
+    }
+
+    impl BufReader {
+        pub fn open(path: impl AsRef<std::path::Path>) -> io::Result<Self> {
+            let file = File::open(path)?;
+            let reader = io::BufReader::new(file);
+
+            Ok(Self { reader })
+        }
+
+        pub fn read_line<'buf>(
+            &mut self,
+            buffer: &'buf mut String,
+        ) -> Option<io::Result<&'buf mut String>> {
+            buffer.clear();
+
+            self.reader
+                .read_line(buffer)
+                .map(|u| if u == 0 { None } else { Some(buffer) })
+                .transpose()
+        }
     }
 }
